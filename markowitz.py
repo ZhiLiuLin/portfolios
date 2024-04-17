@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from qpsolvers import solve_qp
-from scipy import sparse
+# from qpsolvers import solve_qp
+# from scipy import sparse
 
 from .base import DynamicPortfolio
 
@@ -17,30 +17,21 @@ def gmv(covariance: np.ndarray):
 	-------
 	Vector
 	"""
-	# n = covariance.shape[0]
-	# M = np.append( np.append(covariance, np.ones((1, n)), axis=0), -np.ones((n+1, 1)), axis=1 )
-	# M[n, n] = 0
+	n = covariance.shape[0]
+	M = np.append( np.append(covariance, np.ones((1, n)), axis=0), -np.ones((n+1, 1)), axis=1 )
+	M[n, n] = 0
 
-	# v = np.zeros(n+1)
-	# v[n] = 1
-	# current = np.linalg.solve(M, v)[:-1]
+	v = np.zeros(n+1)
+	v[n] = 1
+	return np.linalg.solve(M, v)[:-1]
 
-	# while any(current < 0):
-	# 	for i, w in enumerate(current):
-	# 		if w < 0:
-	# 			M[i, :] = 0
-	# 			M[:, i] = 0
-	# 			M[i, i] = 1
-	# 	current = np.linalg.solve(M, v)[:-1]
-	# return current
-
-	return solve_qp(sparse.csc_matrix(covariance),
-					q=np.zeros( (n:=covariance.shape[0]) ), 
-					A=sparse.csc_matrix(np.ones(n)), 
-					b=np.ones(1), 
-					lb=np.zeros(n), 
-					ub=np.ones(n), 
-					solver="clarabel")
+	# return solve_qp(sparse.csc_matrix(covariance),
+	# 				q=np.zeros( (n:=covariance.shape[0]) ), 
+	# 				A=sparse.csc_matrix(np.ones(n)), 
+	# 				b=np.ones(1), 
+	# 				lb=np.zeros(n), 
+	# 				ub=np.ones(n), 
+	# 				solver="clarabel")
 
 
 def mv(covariance: np.ndarray, expected_returns, desired_return):
@@ -75,6 +66,7 @@ class GMVPortfolio(DynamicPortfolio):
 	def __init__(self, quotes, window=22, name="markowitz GMV portfolio"):
 		super().__init__(quotes, name)
 		self._window = window
+		self._weights = self._weights.iloc[self._window:]
 		return
 
 	def _get_covariance(self, date: str | None, start=None):

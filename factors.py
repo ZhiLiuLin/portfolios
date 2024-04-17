@@ -6,7 +6,7 @@ from .base import DynamicPortfolio
 
 class FactorPortfolio(DynamicPortfolio):
 	def __init__(self, quotes, factors, risk_free, window, name="factor portfolio"):
-		super().__init__(quotes, name)
+		super().__init__(quotes, name=name)
 		self._window = window
 		self._factors = factors.loc[self._quotes.index]
 		self._factors.insert(0, "alpha", 1)

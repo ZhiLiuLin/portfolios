@@ -59,14 +59,23 @@ class DynamicPortfolio(FixedPortfolio):
 		return self._weights.loc[date]
 
 	def get_returns(self, start=None, end=None):
-		if start:
-			if not end:
-				end = start
-				start = self._quotes.index[self._quotes.index.get_loc(start)-1]	
-			pure_returns = self._quotes.loc[start:end].fillna(0).pct_change()
+		if not start and not end:
+			start = self._weights.index[0]
+			end = self._weights.index[-1]
+		elif start and end:
+			if start <= self._weights.index[1]:
+				start = self._weights.index[0]
+			else:
+				start = self._weights.index[self._weights.index.searchsorted(start)-1]
 		else:
-			pure_returns = self._quotes.fillna(0).pct_change()
-		return (pure_returns * pd.DataFrame(pure_returns.index.map(self.get_weights).tolist(), index=pure_returns.index).shift(1)).sum(axis=1)[1:].rename(self.name)
+			i = self._weights.index.searchsorted(start)
+			start = self._weights.index[i-1]
+			end = self._weights.index[i]
+
+		pure_returns = self._quotes.loc[start:end].fillna(0).pct_change()
+		pure_returns.index.map(self.get_weights)
+		weights = self._weights.loc[pure_returns.index].shift(1)
+		return (pure_returns * weights).sum(axis=1)[1:].rename(self.name) / weights[weights > 0].iloc[1:].sum(axis=1)
 
 
 class RandomlyWeightedPortfolio(DynamicPortfolio):
